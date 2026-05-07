@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Admin · Abayologs</title>
+<link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+<div id="nav-mount"></div>
+
+<div id="loginView" style="display:none">
+  <section class="container" style="max-width:420px">
+    <div class="glass" style="padding:28px;margin-top:40px">
+      <h2 class="section-title">Admin Login</h2>
+      <form class="form" id="loginForm">
+        <div><label>Username</label><input name="u" required/></div>
+        <div><label>Password</label><input name="p" type="password" required/></div>
+        <button class="btn btn-primary" type="submit">Login</button>
+        <p style="font-size:.8rem;color:var(--muted)">Demo: admin / admin123</p>
+      </form>
+    </div>
+  </section>
+</div>
+
+<div id="appView" style="display:none">
+  <div class="admin-shell">
+    <aside class="sidebar">
+      <a class="active" data-tab="dashboard">📊 Dashboard</a>
+      <a data-tab="orders">🧾 Orders</a>
+      <a data-tab="products">📦 Products</a>
+      <a data-tab="settings">⚙️ Settings</a>
+      <a onclick="logout()" style="margin-top:20px;color:#ef4444">↩ Logout</a>
+    </aside>
+    <main class="admin-main" id="tabContent"></main>
+  </div>
+</div>
+
+<div id="footer-mount"></div>
+<script src="app.js"></script>
+<script>
+Abayologs.mountChrome('admin');
+const AUTH_KEY='ab_admin_auth';
+function isAuthed(){return sessionStorage.getItem(AUTH_KEY)==='1';}
+function showLogin(){document.getElementById('loginView').style.display='block';document.getElementById('appView').style.display='none';}
+function showApp(){document.getElementById('loginView').style.display='none';document.getElementById('appView').style.display='block';renderTab('dashboard');}
+function logout(){sessionStorage.removeItem(AUTH_KEY);location.reload();}
+document.getElementById('loginForm').addEventListener('submit',e=>{
+  e.preventDefault();
+  const fd=new FormData(e.target);
+  if(fd.get('u')==='admin'&&fd.get('p')==='admin123'){sessionStorage.setItem(AUTH_KEY,'1');showApp();Abayologs.toast('Welcome back!');}
+  else Abayologs.toast('Invalid credentials');
+});
+document.querySelectorAll('.sidebar a[data-tab]').forEach(a=>{
+  a.addEventListener('click',()=>{document.querySelectorAll('.sidebar a').forEach(x=>x.classList.remove('active'));a.classList.add('active');renderTab(a.dataset.tab);});
+});
+
+function renderTab(t){
+  if(t==='dashboard') return renderDashboard();
+  if(t==='orders') return renderOrders();
+  if(t==='products') return renderProducts();
+  if(t==='settings') return renderSettings();
+}
+
+function renderDashboard(){
+  const orders=Abayologs.Store.orders;
+  const today=new Date().toDateString();
+  const weekAgo=Date.now()-7*864e5;
+  const sumToday=orders.filter(o=>new Date(o.createdAt).toDateString()===today&&o.status!=='Pending').reduce((a,o)=>a+o.amount,0);
+  const sumWeek=orders.filter(o=>new Date(o.createdAt).getTime()>weekAgo&&o.status!=='Pending').reduce((a,o)=>a+o.amount,0);
+  const sumTotal=orders.filter(o=>o.status!=='Pending').reduce((a,o)=>a+o.amount,0);
+  const low=Abayologs.Store.products.filter(p=>p.stock<10);
+  document.getElementById('tabContent').innerHTML=`
+    <h2 class="section-title">Dashboard</h2>
+    <div class="stats">
+      <div class="stat glass"><div class="label">Today</div><div class="num">${Abayologs.ngn(sumToday)}</div></div>
+      <div class="stat glass"><div class="label">This Week</div><div class="num">${Abayologs.ngn(sumWeek)}</div></div>
+      <div class="stat glass"><div class="label">Total Sales</div><div class="num">${Abayologs.ngn(sumTotal)}</div></div>
+    </div>
+    ${low.length?`<div class="glass" style="padding:16px"><strong>⚠️ Low stock alert:</strong> ${low.map(p=>`${p.name} <span class="lowstock">${p.stock} left</span>`).join(', ')}</div>`:''}
+    <div class="glass" style="padding:18px;margin-top:20px">
+      <strong>Recent Orders</strong>
+      <div class="table-wrap" style="margin-top:10px">${ordersTable(orders.slice(-5).reverse())}</div>
+    </div>`;
+}
+
+function ordersTable(list){
+  if(!list.length) return `<p style="color:var(--muted)">No orders yet.</p>`;
+  return `<table><thead><tr><th>ID</th><th>Customer</th><th>Product</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead>
+  <tbody>${list.map(o=>`
+    <tr>
+      <td>${o.id}</td>
+      <td>${o.customer.name}<br><small style="color:var(--muted)">${o.customer.email}</small></td>
+      <td>${o.product}</td>
+      <td>${Abayologs.ngn(o.amount)}</td>
+      <td><span class="pill ${o.credentials?'delivered':o.status==='Paid'?'paid':'pending'}">${o.credentials?'Delivered':o.status}</span></td>
+      <td class="actions-cell">
+        <button class="mini-btn" onclick="markPaid('${o.id}')">Mark Paid</button>
+        <button class="mini-btn" onclick="resend('${o.id}')">Resend</button>
+      </td>
+    </tr>`).join('')}</tbody></table>`;
+}
+function renderOrders(){
+  document.getElementById('tabContent').innerHTML=`<h2 class="section-title">Orders</h2><div class="glass" style="padding:18px"><div class="table-wrap">${ordersTable(Abayologs.Store.orders.slice().reverse())}</div></div>`;
+}
+function markPaid(id){
+  const o=Abayologs.Store.orders.find(x=>x.id===id);if(!o)return;
+  const creds=o.credentials||Abayologs.genCreds(o.product);
+  Abayologs.Store.updateOrder(id,{status:'Delivered',credentials:creds});
+  Abayologs.toast('Order marked as Paid & Delivered');
+  renderDashboard();
+}
+function resend(id){
+  const o=Abayologs.Store.orders.find(x=>x.id===id);if(!o)return;
+  const creds=Abayologs.genCreds(o.product);
+  Abayologs.Store.updateOrder(id,{credentials:creds,status:'Delivered'});
+  Abayologs.toast('Delivery resent');
+  renderDashboard();
+}
+window.markPaid=markPaid;window.resend=resend;
+
+function renderProducts(){
+  const prods=Abayologs.Store.products;
+  document.getElementById('tabContent').innerHTML=`
+    <h2 class="section-title">Products</h2>
+    <div class="glass" style="padding:18px;margin-bottom:18px">
+      <strong>Add Product</strong>
+      <form class="form" id="addProd" style="margin-top:12px">
+        <div class="row">
+          <div class="col"><label>Name</label><input name="name" required/></div>
+          <div class="col"><label>Category</label>
+            <select name="category"><option>Facebook</option><option>TikTok</option><option>Instagram</option><option>WhatsApp Numbers</option><option>VPN</option><option>Other</option></select>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col"><label>Price (NGN)</label><input name="price" type="number" required/></div>
+          <div class="col"><label>Stock</label><input name="stock" type="number" required/></div>
+          <div class="col"><label>Icon (emoji)</label><input name="icon" value="🛒"/></div>
+        </div>
+        <button class="btn btn-primary">Add Product</button>
+      </form>
+    </div>
+    <div class="glass" style="padding:18px"><div class="table-wrap">
+    <table><thead><tr><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th>Actions</th></tr></thead><tbody>
+    ${prods.map(p=>`<tr>
+      <td>${p.icon} ${p.name}</td><td>${p.category}</td><td>${Abayologs.ngn(p.price)}</td>
+      <td>${p.stock} ${p.stock<10?'<span class="lowstock">low</span>':''}</td>
+      <td class="actions-cell">
+        <button class="mini-btn" onclick="editProd('${p.id}')">Edit</button>
+        <button class="mini-btn" onclick="delProd('${p.id}')">Delete</button>
+      </td></tr>`).join('')}
+    </tbody></table></div></div>`;
+  document.getElementById('addProd').addEventListener('submit',e=>{
+    e.preventDefault();const fd=new FormData(e.target);
+    const list=Abayologs.Store.products;
+    list.push({id:'p'+Date.now(),name:fd.get('name'),category:fd.get('category'),price:+fd.get('price'),stock:+fd.get('stock'),icon:fd.get('icon')||'🛒',desc:''});
+    Abayologs.Store.products=list;Abayologs.toast('Product added');renderProducts();
+  });
+}
+function delProd(id){if(!confirm('Delete this product?'))return;Abayologs.Store.products=Abayologs.Store.products.filter(p=>p.id!==id);Abayologs.toast('Deleted');renderProducts();}
+function editProd(id){
+  const p=Abayologs.Store.products.find(x=>x.id===id);if(!p)return;
+  const name=prompt('Name:',p.name);if(name===null)return;
+  const price=prompt('Price:',p.price);if(price===null)return;
+  const stock=prompt('Stock:',p.stock);if(stock===null)return;
+  Abayologs.Store.products=Abayologs.Store.products.map(x=>x.id===id?{...x,name,price:+price,stock:+stock}:x);
+  Abayologs.toast('Updated');renderProducts();
+}
+window.delProd=delProd;window.editProd=editProd;
+
+function renderSettings(){
+  document.getElementById('tabContent').innerHTML=`
+    <h2 class="section-title">Settings</h2>
+    <div class="glass" style="padding:18px;max-width:560px">
+      <p style="margin-bottom:14px">Manage your storefront and reset demo data.</p>
+      <button class="btn btn-ghost" onclick="if(confirm('Reset all orders?')){localStorage.removeItem('ab_orders');Abayologs.toast('Orders cleared');}">Clear All Orders</button>
+      <button class="btn btn-ghost" onclick="if(confirm('Reset products to defaults?')){localStorage.removeItem('ab_products');Abayologs.toast('Products reset');renderProducts();}" style="margin-left:8px">Reset Products</button>
+    </div>`;
+}
+
+if(isAuthed()) showApp(); else showLogin();
+</script>
+</body>
+</html>

@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Checkout · Abayologs</title>
+<link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+<div id="nav-mount"></div>
+<section class="container">
+  <h2 class="section-title">Checkout</h2>
+  <div class="row">
+    <div class="col glass" style="padding:24px">
+      <h3 style="margin-bottom:14px">Your Order</h3>
+      <div id="orderSummary"></div>
+    </div>
+    <div class="col glass" style="padding:24px">
+      <h3 style="margin-bottom:14px">Customer Details</h3>
+      <form class="form" id="custForm">
+        <div><label>Full Name</label><input required name="name"/></div>
+        <div><label>Email</label><input required type="email" name="email"/></div>
+        <div><label>Phone Number</label><input required name="phone"/></div>
+        <button class="btn btn-primary btn-block" type="submit">Generate Payment Details →</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="payArea" style="display:none;margin-top:24px" class="glass" >
+    <div style="padding:24px">
+      <h3 style="margin-bottom:14px">Payment Instructions</h3>
+      <div class="kv"><span>Reference</span><span id="ref"></span></div>
+      <div class="kv"><span>Amount</span><span id="amt"></span></div>
+      <div class="kv"><span>Bank</span><span>OPay / PalmPay (Virtual)</span></div>
+      <div class="kv"><span>Account Number</span><span id="acct">[ to be assigned ]</span></div>
+      <div class="kv"><span>Account Name</span><span>Abayologs</span></div>
+      <p style="margin:16px 0;color:var(--muted);font-size:.9rem">Transfer the exact amount with your reference in the narration. Your account is auto-checked every 3 seconds.</p>
+      <button class="btn btn-primary" id="paidBtn">I have paid</button>
+      <span id="autoStatus" style="margin-left:12px;color:var(--muted);font-size:.85rem"></span>
+    </div>
+  </div>
+</section>
+<div id="footer-mount"></div>
+<script src="app.js"></script>
+<script>
+Abayologs.mountChrome('products');
+const id = new URLSearchParams(location.search).get('id');
+const product = Abayologs.Store.products.find(p=>p.id===id) || Abayologs.Store.products[0];
+document.getElementById('orderSummary').innerHTML = `
+  <div style="display:flex;gap:14px;align-items:center">
+    <div class="product-icon">${product.icon}</div>
+    <div><div style="font-weight:700">${product.name}</div><div class="cat">${product.category}</div></div>
+  </div>
+  <div class="kv" style="margin-top:14px"><span>Price</span><span class="price">${Abayologs.ngn(product.price)}</span></div>
+`;
+let currentOrder=null,timer=null;
+document.getElementById('custForm').addEventListener('submit',e=>{
+  e.preventDefault();
+  const fd=new FormData(e.target);
+  const ref=Abayologs.genRef();
+  currentOrder={
+    id:ref,product:product.name,productId:product.id,amount:product.price,
+    customer:{name:fd.get('name'),email:fd.get('email'),phone:fd.get('phone')},
+    status:'Pending',createdAt:new Date().toISOString(),credentials:null,
+  };
+  Abayologs.Store.saveOrder(currentOrder);
+  document.getElementById('ref').textContent=ref;
+  document.getElementById('amt').textContent=Abayologs.ngn(product.price);
+  document.getElementById('acct').textContent='8'+Math.floor(100000000+Math.random()*899999999);
+  document.getElementById('payArea').style.display='block';
+  document.getElementById('payArea').scrollIntoView({behavior:'smooth'});
+  startPolling();
+});
+function startPolling(){
+  let t=0;const el=document.getElementById('autoStatus');
+  timer=setInterval(()=>{t+=3;el.textContent=`Checking payment... (${t}s)`;
+    const o=Abayologs.Store.orders.find(x=>x.id===currentOrder.id);
+    if(o&&o.status!=='Pending'){clearInterval(timer);completeOrder(o);}
+  },3000);
+}
+function completeOrder(o){
+  if(!o.credentials){
+    o.credentials = Abayologs.genCreds(o.product);
+    o.status='Delivered';
+    Abayologs.Store.updateOrder(o.id,{credentials:o.credentials,status:'Delivered'});
+  }
+  location.href='success.html?id='+o.id;
+}
+document.getElementById('paidBtn').addEventListener('click',e=>{
+  const btn=e.currentTarget;btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Verifying...';
+  setTimeout(()=>{
+    Abayologs.Store.updateOrder(currentOrder.id,{status:'Paid'});
+    const o=Abayologs.Store.orders.find(x=>x.id===currentOrder.id);
+    completeOrder(o);
+  },1800);
+});
+</script>
+</body>
+</html>

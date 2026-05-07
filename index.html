@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Abayologs · Premium Social Media Tools & Accounts</title>
+<meta name="description" content="Buy premium social media accounts, WhatsApp numbers, VPNs and streaming subscriptions in Nigeria."/>
+<link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+<div id="nav-mount"></div>
+
+<header class="hero container">
+  <span class="badge">✨ Trusted by 5,000+ buyers</span>
+  <h1>Abayologs</h1>
+  <p>Premium Social Media Tools & Accounts — delivered instantly after payment.</p>
+  <div class="hero-cta">
+    <a href="products.html" class="btn btn-primary">Browse Products →</a>
+    <a href="status.html" class="btn btn-ghost">Check Order Status</a>
+  </div>
+</header>
+
+<section class="container">
+  <h2 class="section-title">Featured Products</h2>
+  <div class="grid grid-3" id="featured"></div>
+</section>
+
+<div id="footer-mount"></div>
+<script src="app.js"></script>
+<script>
+  Abayologs.mountChrome('home');
+  const featured = Abayologs.Store.products.slice(0,6);
+  document.getElementById('featured').innerHTML = featured.map((p,i)=>`
+    <article class="product glass" style="animation-delay:${i*60}ms">
+      <div class="product-icon">${p.icon}</div>
+      <span class="cat">${p.category}</span>
+      <h3>${p.name}</h3>
+      <p class="desc">${p.desc}</p>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span class="price">${Abayologs.ngn(p.price)}</span>
+        <a href="checkout.html?id=${p.id}" class="btn btn-primary">Buy Now</a>
+      </div>
+    </article>`).join('');
+</script>
+</body>
+</html>

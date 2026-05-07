@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Products · Abayologs</title>
+<link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+<div id="nav-mount"></div>
+<section class="container">
+  <h2 class="section-title">All Products</h2>
+  <input class="search" id="search" placeholder="Search products..."/>
+  <div class="filters" id="filters"></div>
+  <div class="grid grid-3" id="grid"></div>
+</section>
+<div id="footer-mount"></div>
+<script src="app.js"></script>
+<script>
+  Abayologs.mountChrome('products');
+  const cats = ['All','Facebook','TikTok','Instagram','WhatsApp Numbers','VPN','Other'];
+  let active='All', q='';
+  const filtersEl=document.getElementById('filters');
+  filtersEl.innerHTML = cats.map(c=>`<button class="filter ${c===active?'active':''}" data-c="${c}">${c}</button>`).join('');
+  filtersEl.addEventListener('click',e=>{const b=e.target.closest('.filter');if(!b)return;active=b.dataset.c;[...filtersEl.children].forEach(x=>x.classList.toggle('active',x.dataset.c===active));render();});
+  document.getElementById('search').addEventListener('input',e=>{q=e.target.value.toLowerCase();render();});
+  function render(){
+    const list = Abayologs.Store.products.filter(p=>(active==='All'||p.category===active)&&p.name.toLowerCase().includes(q));
+    document.getElementById('grid').innerHTML = list.length?list.map((p,i)=>`
+      <article class="product glass fade-in" style="animation-delay:${i*40}ms">
+        <div class="product-icon">${p.icon}</div>
+        <span class="cat">${p.category}</span>
+        <h3>${p.name}</h3>
+        <p class="desc">${p.desc}</p>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span class="price">${Abayologs.ngn(p.price)}</span>
+          <a href="checkout.html?id=${p.id}" class="btn btn-primary">Buy Now</a>
+        </div>
+      </article>`).join('') : `<p style="color:var(--muted)">No products match.</p>`;
+  }
+  render();
+</script>
+</body>
+</html>
