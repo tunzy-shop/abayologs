@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Abayologs</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .admin-wrapper {
+            display: flex;
+            min-height: 100vh;
+        }
+        .admin-sidebar {
+            width: 260px;
+            background: var(--bg-card);
+            border-right: 1px solid var(--border);
+            padding: 2rem 1rem;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        .admin-main {
+            flex: 1;
+            margin-left: 260px;
+            padding: 2rem;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid var(--border);
+        }
+        .stat-card h3 {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+        .stat-card .number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        @media (max-width: 768px) {
+            .admin-sidebar {
+                width: 200px;
+            }
+            .admin-main {
+                margin-left: 200px;
+            }
+        }
+        @media (max-width: 576px) {
+            .admin-sidebar {
+                transform: translateX(-100%);
+                position: fixed;
+                z-index: 1000;
+            }
+            .admin-sidebar.open {
+                transform: translateX(0);
+            }
+            .admin-main {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-wrapper">
+        <div class="admin-sidebar">
+            <div style="text-align: center; margin-bottom: 2rem;">
+                <h2 style="color: var(--primary);">Abayologs</h2>
+                <p style="font-size: 0.75rem;">Admin Panel</p>
+            </div>
+            <nav>
+                <a href="dashboard.html" class="active"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                <a href="products.html"><i class="fas fa-box"></i> Products</a>
+                <a href="inventory.html"><i class="fas fa-database"></i> Inventory</a>
+                <a href="orders.html"><i class="fas fa-shopping-cart"></i> Orders</a>
+                <a href="#" onclick="adminLogout()"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </nav>
+        </div>
+        <div class="admin-main">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <h1>Dashboard</h1>
+                <button id="mobile-sidebar-toggle" class="btn-outline" style="display: none;">☰ Menu</button>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>Total Products</h3>
+                    <div class="number" id="total-products">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Total Orders (All Time)</h3>
+                    <div class="number" id="total-orders">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Pending Orders</h3>
+                    <div class="number" id="pending-orders">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Available Facebook Accounts</h3>
+                    <div class="number" id="fb-stock">0</div>
+                </div>
+            </div>
+            
+            <div class="stat-card" style="margin-top: 1rem;">
+                <h3>Quick Actions</h3>
+                <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 1rem;">
+                    <a href="products.html" class="btn-primary">➕ Add New Product</a>
+                    <a href="inventory.html" class="btn-outline">📤 Upload Facebook Accounts</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="../js/app.js"></script>
+    <script>
+        document.getElementById('total-products').textContent = products.length;
+        document.getElementById('fb-stock').textContent = JSON.parse(localStorage.getItem('facebookAccounts') || '[]').filter(a => !a.sold).length;
+        
+        // Mobile sidebar toggle
+        const toggleBtn = document.getElementById('mobile-sidebar-toggle');
+        const sidebar = document.querySelector('.admin-sidebar');
+        if (toggleBtn) {
+            toggleBtn.style.display = window.innerWidth <= 576 ? 'block' : 'none';
+            toggleBtn.addEventListener('click', () => sidebar.classList.toggle('open'));
+            window.addEventListener('resize', () => {
+                toggleBtn.style.display = window.innerWidth <= 576 ? 'block' : 'none';
+                if (window.innerWidth > 576) sidebar.classList.remove('open');
+            });
+        }
+    </script>
+</body>
+</html>
