@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory - Abayologs</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .admin-wrapper { display: flex; min-height: 100vh; }
+        .admin-sidebar { width: 260px; background: var(--bg-card); border-right: 1px solid var(--border); padding: 2rem 1rem; position: fixed; height: 100vh; overflow-y: auto; }
+        .admin-main { flex: 1; margin-left: 260px; padding: 2rem; }
+        .form-card { background: var(--bg-card); border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; border: 1px solid var(--border); }
+        textarea { width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-primary); color: var(--text-primary); font-family: monospace; }
+        @media (max-width: 768px) { .admin-main { margin-left: 0; } .admin-sidebar { transform: translateX(-100%); } }
+    </style>
+</head>
+<body>
+    <div class="admin-wrapper">
+        <div class="admin-sidebar">
+            <div style="text-align: center; margin-bottom: 2rem;"><h2 style="color: var(--primary);">Abayologs</h2><p style="font-size: 0.75rem;">Admin Panel</p></div>
+            <nav>
+                <a href="dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                <a href="products.html"><i class="fas fa-box"></i> Products</a>
+                <a href="inventory.html" class="active"><i class="fas fa-database"></i> Inventory</a>
+                <a href="orders.html"><i class="fas fa-shopping-cart"></i> Orders</a>
+                <a href="#" onclick="adminLogout()"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </nav>
+        </div>
+        <div class="admin-main">
+            <h1>Inventory Management</h1>
+            
+            <div class="form-card">
+                <h3>Upload Facebook Accounts</h3>
+                <p>Paste email,password pairs (one per line). Format: <code>email@example.com,password123</code></p>
+                <textarea id="accounts-list" rows="10" placeholder="example1@gmail.com,pass123&#10;example2@gmail.com,pass456&#10;example3@gmail.com,pass789"></textarea>
+                <button id="upload-accounts-btn" class="btn-primary" style="margin-top: 1rem;"><i class="fas fa-upload"></i> Upload Accounts</button>
+                <p style="margin-top: 1rem;">Available accounts: <strong id="account-count">0</strong></p>
+            </div>
+            
+            <div class="form-card">
+                <h3>Bulk Upload Instructions</h3>
+                <ul>
+                    <li>Each line should contain one account: <strong>email,password</strong></li>
+                    <li>No spaces after commas</li>
+                    <li>Example: <code>john@gmail.com,Fb@2024</code></li>
+                    <li>Uploaded accounts will be auto-assigned when customers purchase</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <script src="../js/app.js"></script>
+</body>
+</html>
